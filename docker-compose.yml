@@ -116,7 +116,7 @@ services:
       - WEBUI_PORT=8988
     volumes:
       - ./config/qbittorrent:/config
-      - ./downloads:/downloads
+      - ${DOWNLOADS}:/downloads
     ports:
       - 6881:6881
       - 8988:8988
@@ -136,7 +136,7 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ./timezone:/etc/localtime
-      - ./downloads/torrent-blackhole:/downloads # place where to put .torrent files for manual download
+      - ${BLACKHOLE}:/downloads # place where to put .torrent files for manual download
       - ./config/jackett:/config # config files
     ports:
       - 9117:9117
@@ -173,10 +173,10 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ./config/jellyfin:/config
-      - ./downloads/complete/tv:/tv # tv shows folder
-      - ./downloads/complete/anime:/anime # tv shows folder
-      - ./downloads/complete/movies:/movies # movies folder
-      - ./downloads:/downloads # download folder
+      - ${TV}:/tv # tv shows folder
+      - ${ANIME}:/anime # tv shows folder
+      - ${MOVIES}:/movies # movies folder
+      - ${DOWNLOADS}:/downloads # download folder
     ports:
       - 8096:8096
     restart: unless-stopped
@@ -197,9 +197,9 @@ services:
     volumes:
       - ./timezone:/etc/localtime
       - ./config/sonarr:/config # config files
-      - ./downloads/complete/tv:/tv # tv shows folder
-      - ./downloads/complete/anime:/anime # tv shows folder
-      - ./downloads:/downloads # download folder
+      - ${TV}:/tv # tv shows folder
+      - ${ANIME}:/anime # tv shows folder
+      - ${DOWNLOADS}:/downloads # download folder
     ports:
       - 8989:8989
     labels:
@@ -219,8 +219,8 @@ services:
     volumes:
       - ./timezone:/etc/localtime
       - ./config/radarr:/config # config files
-      - ./downloads/complete/movies:/movies # movies folder
-      - ./downloads:/downloads # download folder
+      - ${MOVIES}:/movies # movies folder
+      - ${DOWNLOADS}:/downloads # download folder
     ports:
       - 7878:7878
     labels:
@@ -240,9 +240,9 @@ services:
       - UMASK=022 #optional
     volumes:
       - ./config/bazarr:/config # config files
-      - ./downloads/complete/movies:/movies # movies folder
-      - ./downloads/complete/tv:/tv # tv shows folder
-      - ./downloads/complete/anime:/anime # anime shows folder
+      - ${MOVIES}:/movies # movies folder
+      - ${TV}:/tv # tv shows folder
+      - ${ANIME}:/anime # anime shows folder
     ports:
       - 6767:6767
     labels:
@@ -260,8 +260,8 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ./config/readarr:/config
-      - ./downloads/complete/books:/books
-      - ./downloads:/downloads
+      - ${BOOKS}:/books
+      - ${DOWNLOADS}:/downloads
     ports:
       - 8787:8787
     restart: unless-stopped
@@ -281,7 +281,7 @@ services:
       - DOCKER_MODS=linuxserver/calibre-web:calibre
     volumes:
       - ./config/calibre-web:/config
-      - ./downloads/complete/books:/books
+      - ${BOOKS}:/books
     ports:
       - 8093:8083
     restart: unless-stopped
@@ -300,7 +300,7 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ./config/calibre:/config
-      - ./downloads/complete/books:/books
+      - ${BOOKS}:/books
     ports:
       - 8082:8080
       - 8081:8081
@@ -362,10 +362,10 @@ services:
       - TZ=${TZ} # timezone, defined in .env      
     volumes:
       - ./config/files:/config
-      - ./downloads/complete/tv:/data/tv # tv shows folder
-      - ./downloads/complete/anime:/data/anime # tv shows folder
-      - ./downloads/complete/movies:/data/movies # movies folder
-      - ./downloads:/data/downloads # download folder    
+      - ${TV}:/data/tv # tv shows folder
+      - ${ANIME}:/data/anime # tv shows folder
+      - ${MOVIES}:/data/movies # movies folder
+      - ${DOWNLOADS}:/data/downloads # download folder    
     labels:
       traefik.http.routers.files.rule: Host(`files.$DOMAIN_NAME`, `files.localhost`)
       traefik.http.services.files.loadbalancer.server.port: 8080
