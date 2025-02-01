@@ -1,5 +1,3 @@
-version: "3.4"
-
 networks:
   private_network:
     ipam:
@@ -63,6 +61,47 @@ services:
       private_network:
         ipv4_address: 10.2.0.100
 
+  decluttarr:
+    image: ghcr.io/manimatter/decluttarr:latest
+    container_name: decluttarr
+    restart: always
+    environment:
+      TZ: $TZ
+      PUID: $PUID
+      PGID: $PGID
+      LOG_LEVEL: INFO
+      REMOVE_TIMER: 10
+      REMOVE_FAILED: True
+      REMOVE_FAILED_IMPORTS: True
+      REMOVE_METADATA_MISSING: True
+      REMOVE_MISSING_FILES: True
+      REMOVE_ORPHANS: True
+      REMOVE_SLOW: True
+      REMOVE_STALLED: True
+      REMOVE_UNMONITORED: True
+      RUN_PERIODIC_RESCANS: '
+        {
+        "SONARR": {"MISSING": true, "CUTOFF_UNMET": true, "MAX_CONCURRENT_SCANS": 3, "MIN_DAYS_BEFORE_RESCAN": 7},
+        "RADARR": {"MISSING": true, "CUTOFF_UNMET": true, "MAX_CONCURRENT_SCANS": 3, "MIN_DAYS_BEFORE_RESCAN": 7}
+        }'
+      PERMITTED_ATTEMPTS: 3
+      NO_STALLED_REMOVAL_QBIT_TAG: Don't Kill
+      MIN_DOWNLOAD_SPEED: 100
+      FAILED_IMPORT_MESSAGE_PATTERNS: '
+        [
+        "Not a Custom Format upgrade for existing",
+        "Not an upgrade for existing"
+        ]'
+      RADARR_URL: http://radarr:7878
+      RADARR_KEY: $RADARR_API_KEY
+      SONARR_URL: http://sonarr:8989
+      SONARR_KEY: $SONARR_API_KEY
+      READARR_URL: http://readarr:8787
+      READARR_KEY: $READARR_API_KEY
+      QBITTORRENT_URL: http://qbittorrent:8988
+      QBITTORRENT_USERNAME: $QBITTORRENT_USERNAME
+      QBITTORRENT_PASSWORD: $QBITTORRENT_PASSWORD
+
   homarr:
     image: ghcr.io/ajnart/homarr:latest
     restart: unless-stopped
@@ -103,8 +142,30 @@ services:
       traefik.http.services.jellyseerr.loadbalancer.server.port: 5055
       traefik.http.routers.jellyseerr.middlewares: traefik-forward-auth
 
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    restart: unless-stopped
+    hostname: plex
+    container_name: plex
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+      - VERSION=docker
+    volumes:
+      - ./config/plex:/config
+      - ${MOVIES}:/movies
+      - ${TV}:/tv
+      - ${ANIME}:/anime
+    ports:
+      - 32400:32400
+    labels:
+      traefik.http.routers.plex.rule: Host(`plex.$DOMAIN_NAME`, `plex.localhost`)
+      traefik.http.services.plex.loadbalancer.server.port: 32400
+      traefik.http.routers.plex.middlewares: traefik-forward-auth
+
   qbittorrent:
-    image: linuxserver/qbittorrent:14.2.5.99202004250119-7015-2c65b79ubuntu18.04.1-ls93
+    image: linuxserver/qbittorrent:latest
     restart: unless-stopped
     hostname: qbittorrent
     container_name: qbittorrent
@@ -124,6 +185,25 @@ services:
       traefik.http.routers.torrent.rule: Host(`torrent.$DOMAIN_NAME`, `torrent.localhost`)
       traefik.http.services.torrent.loadbalancer.server.port: 8988
       traefik.http.routers.torrent.middlewares: traefik-forward-auth
+
+  flaresolverr:    
+    container_name: flaresolverr
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    hostname: flaresolverr
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    ports:
+      - 8191:8191
+    labels:
+      traefik.http.routers.flaresolverr.rule: Host(`flaresolverr.$DOMAIN_NAME`, `flaresolverr.localhost`)
+      traefik.http.services.flaresolverr.loadbalancer.server.port: 8191
+      traefik.http.routers.flaresolverr.middlewares: traefik-forward-auth
 
   jackett:
     container_name: jackett
@@ -362,14 +442,11 @@ services:
       - TZ=${TZ} # timezone, defined in .env      
     volumes:
       - ./config/files:/config
-      - ${TV}:/data/tv # tv shows folder
-      - ${ANIME}:/data/anime # tv shows folder
-      - ${MOVIES}:/data/movies # movies folder
-      - ${DOWNLOADS}:/data/downloads # download folder    
+      - ${FILES}:/data/files
     labels:
       traefik.http.routers.files.rule: Host(`files.$DOMAIN_NAME`, `files.localhost`)
       traefik.http.services.files.loadbalancer.server.port: 8080
-      traefik.http.routers.files.middlewares: traefik-forward-auth    
+      traefik.http.routers.files.middlewares: traefik-forward-auth
 
   traefik:
     image: traefik:v2.3
@@ -395,7 +472,7 @@ services:
       - CF_API_EMAIL=${MY_EMAIL2}
       - CF_API_KEY=${CLOUDFLARE_API_TLS}
     volumes:
-      - //var/run/docker.sock:/var/run/docker.sock      
+      - //var/run/docker.sock:/var/run/docker.sock
     labels:
       traefik.http.routers.dash.rule: Host(`dash.$DOMAIN_NAME`, `dash.localhost`)
       traefik.http.routers.dash.service: api@internal    
@@ -449,13 +526,15 @@ services:
     security_opt:
       - no-new-privileges:true    
     command: 
-      --rule.torrent.action=allow --rule.torrent.rule="(Host(`torrent.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`torrent.localhost`)"      
+      --rule.torrent.action=allow --rule.torrent.rule="(Host(`torrent.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`torrent.localhost`)"
       --rule.jellyseerr.action=allow --rule.jellyseerr.rule="(Host(`jellyseerr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`jellyseerr.localhost`)"
+      --rule.plex.action=allow --rule.plex.rule="(Host(`plex.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`plex.localhost`)"
       --rule.overseerr.action=allow --rule.overseerr.rule="(Host(`overseerr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`overseerr.localhost`)"
       --rule.sonarr.action=allow --rule.sonarr.rule="(Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`sonarr.localhost`)"
       --rule.bazarr.action=allow --rule.bazarr.rule="(Host(`bazarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`bazarr.localhost`)"
       --rule.radarr.action=allow --rule.radarr.rule="(Host(`radarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`radarr.localhost`)"
       --rule.jackett.action=allow --rule.jackett.rule="(Host(`jackett.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`jackett.localhost`)"
+      --rule.flaresolverr.action=allow --rule.flaresolverr.rule="(Host(`flaresolverr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`flaresolverr.localhost`)"
       --rule.prowlarr.action=allow --rule.prowlarr.rule="(Host(`prowlarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`prowlarr.localhost`)"
       --rule.readarr.action=allow --rule.readarr.rule="(Host(`readarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`readarr.localhost`)"      
       --rule.jellyfin.action=allow --rule.jellyfin.rule="Host(`jellyfin.$DOMAIN_NAME`) || Host(`jellyfin.localhost`)"      
@@ -464,7 +543,7 @@ services:
       --rule.calibre.action=allow --rule.calibre.rule="Host(`calibre.localhost`)"
       --rule.portainer.action=allow --rule.portainer.rule="Host(`portainer.localhost`)"
       --rule.traefik.action=allow --rule.traefik.rule="Host(`dash.localhost`)"
-      --rule.vscode.action=allow --rule.vscode.rule="Host(`vscode.localhost`)"
+      --rule.vscode.action=allow --rule.vscode.rule="Host(`vscode.localhost`)"            
       --rule.files.action=allow --rule.files.rule="(Host(`files.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`files.localhost`)"
       --whitelist=${MY_EMAIL} --whitelist=${MY_EMAIL2} --whitelist=${MY_EMAIL3} --whitelist=${MY_EMAIL4}
     labels:
