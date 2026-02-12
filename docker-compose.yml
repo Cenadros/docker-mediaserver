@@ -19,7 +19,7 @@ services:
 
   wireguard:
     depends_on: [unbound, adguard]
-    image: linuxserver/wireguard
+    image: lscr.io/linuxserver/wireguard
     container_name: wireguard
     cap_add:
       - NET_ADMIN
@@ -29,13 +29,13 @@ services:
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
       - SERVERPORT=51820
-      - SERVERURL=wireguard.${DOMAIN_NAME}  #optional - For use with DDNS (Uncomment to use)
+      - SERVERURL=wireguard.${DOMAIN_NAME} #optional - For use with DDNS (Uncomment to use)
       - PEERS=1 # How many peers to generate for you (clients)
       - PEERDNS=10.2.0.100 # Set it to point to adguard home
       - INTERNAL_SUBNET=10.6.0.0
       #- ALLOWEDIPS=10.2.0.0/24 # optional - split tunnel for web panel and DNS traffic only
     volumes:
-      - ./config/wireguard:/config      
+      - ./config/wireguard:/config
     ports:
       - 51820:51820/udp
     sysctls:
@@ -56,7 +56,7 @@ services:
       - ./config/adguard/opt-adguard-work:/opt/adguardhome/work
       - ./config/adguard/opt-adguard-conf:/opt/adguardhome/conf
     ports:
-      - 5335:53      
+      - 5335:53
     networks:
       private_network:
         ipv4_address: 10.2.0.100
@@ -96,8 +96,6 @@ services:
       RADARR_KEY: $RADARR_API_KEY
       SONARR_URL: http://sonarr:8989
       SONARR_KEY: $SONARR_API_KEY
-      READARR_URL: http://readarr:8787
-      READARR_KEY: $READARR_API_KEY
       QBITTORRENT_URL: http://qbittorrent:8988
       QBITTORRENT_USERNAME: $QBITTORRENT_USERNAME
       QBITTORRENT_PASSWORD: $QBITTORRENT_PASSWORD
@@ -136,7 +134,7 @@ services:
     volumes:
       - ./config/jellyseerr:/app/config
     ports:
-        - 5055:5055
+      - 5055:5055
     labels:
       traefik.http.routers.jellyseerr.rule: Host(`jellyseerr.$DOMAIN_NAME`, `jellyseerr.localhost`)
       traefik.http.services.jellyseerr.loadbalancer.server.port: 5055
@@ -165,7 +163,7 @@ services:
       traefik.http.routers.plex.middlewares: traefik-forward-auth
 
   qbittorrent:
-    image: linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:latest
     restart: unless-stopped
     hostname: qbittorrent
     container_name: qbittorrent
@@ -186,7 +184,7 @@ services:
       traefik.http.services.torrent.loadbalancer.server.port: 8988
       traefik.http.routers.torrent.middlewares: traefik-forward-auth
 
-  flaresolverr:    
+  flaresolverr:
     container_name: flaresolverr
     image: ghcr.io/flaresolverr/flaresolverr:latest
     restart: unless-stopped
@@ -207,7 +205,7 @@ services:
 
   jackett:
     container_name: jackett
-    image: linuxserver/jackett:latest
+    image: lscr.io/linuxserver/jackett:latest
     restart: unless-stopped
     hostname: jackett
     environment:
@@ -267,7 +265,7 @@ services:
 
   sonarr:
     container_name: sonarr
-    image: linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:latest
     restart: unless-stopped
     hostname: sonarr
     environment:
@@ -285,11 +283,11 @@ services:
     labels:
       traefik.http.routers.sonarr.rule: Host(`sonarr.$DOMAIN_NAME`, `sonarr.localhost`)
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
-      traefik.http.routers.sonarr.middlewares: traefik-forward-auth      
+      traefik.http.routers.sonarr.middlewares: traefik-forward-auth
 
   radarr:
     container_name: radarr
-    image: linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:latest
     restart: unless-stopped
     hostname: radarr
     environment:
@@ -302,15 +300,15 @@ services:
       - ${MOVIES}:/movies # movies folder
       - ${DOWNLOADS}:/downloads # download folder
     ports:
-      - 7878:7878
+      - 7879:7878
     labels:
       traefik.http.routers.radarr.rule: Host(`radarr.$DOMAIN_NAME`, `radarr.localhost`)
       traefik.http.services.radarr.loadbalancer.server.port: 7878
-      traefik.http.routers.radarr.middlewares: traefik-forward-auth    
+      traefik.http.routers.radarr.middlewares: traefik-forward-auth
 
   bazarr:
     container_name: bazarr
-    image: linuxserver/bazarr:latest
+    image: lscr.io/linuxserver/bazarr:latest
     restart: unless-stopped
     hostname: bazarr
     environment:
@@ -329,36 +327,16 @@ services:
       traefik.http.routers.bazarr.rule: Host(`bazarr.$DOMAIN_NAME`, `bazarr.localhost`)
       traefik.http.services.bazarr.loadbalancer.server.port: 6767
       traefik.http.routers.bazarr.middlewares: traefik-forward-auth
-  
-  readarr:
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
-    hostname: readarr
-    environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-    volumes:
-      - ./config/readarr:/config
-      - ${BOOKS}:/books
-      - ${DOWNLOADS}:/downloads
-    ports:
-      - 8787:8787
-    restart: unless-stopped
-    labels:      
-      traefik.http.routers.readarr.rule: Host(`readarr.$DOMAIN_NAME`, `readarr.localhost`)
-      traefik.http.services.readarr.loadbalancer.server.port: 8787
-      traefik.http.routers.readarr.middlewares: traefik-forward-auth
 
   calibre-web:
-    image: linuxserver/calibre-web:0.6.7-ls64
+    image: lscr.io/linuxserver/calibre-web:latest
     container_name: calibre-web
     hostname: calibre-web
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
-      - DOCKER_MODS=linuxserver/calibre-web:calibre
+      - DOCKER_MODS=linuxserver/mods:universal-calibre
     volumes:
       - ./config/calibre-web:/config
       - ${BOOKS}:/books
@@ -368,10 +346,10 @@ services:
     labels:
       traefik.http.routers.calibre-web.rule: Host(`calibre-web.$DOMAIN_NAME`, `calibre-web.localhost`)
       traefik.http.services.calibre-web.loadbalancer.server.port: 8083
-      traefik.http.routers.calibre-web.middlewares: traefik-forward-auth      
+      traefik.http.routers.calibre-web.middlewares: traefik-forward-auth
 
   calibre:
-    image: linuxserver/calibre
+    image: lscr.io/linuxserver/calibre
     container_name: calibre
     hostname: calibre
     environment:
@@ -402,28 +380,46 @@ services:
     volumes:
       - //var/run/docker.sock:/var/run/docker.sock
       - ./config/portainer:/data
-    labels:      
+    labels:
       traefik.http.routers.portainer.rule: Host(`portainer.$DOMAIN_NAME`, `portainer.localhost`)
       traefik.http.services.portainer.loadbalancer.server.port: 9000
-      traefik.http.routers.portainer.middlewares: traefik-forward-auth      
+      traefik.http.routers.portainer.middlewares: traefik-forward-auth
+
+  vw:
+    image: vaultwarden/server:testing
+    container_name: vw
+    hostname: vw
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://vw.${DOMAIN_NAME}"
+      SIGNUPS_ALLOWED: "true"
+      ADMIN_TOKEN: TcoxxOflBbl93QAmQRcQDZZEtY0tTDJgqWXsFqZF64cIYBwjRaB32I9NR69LyXjG
+    volumes:
+      - ./config/vaultwarden:/data/
+    ports:
+      - 8092:80
+    labels:
+      traefik.http.routers.vw.rule: Host(`vw.$DOMAIN_NAME`, `vw.localhost`)
+      traefik.http.services.vw.loadbalancer.server.port: 80
+      traefik.http.routers.vw.middlewares: traefik-forward-auth
 
   vscode:
-    image: linuxserver/code-server
+    image: lscr.io/linuxserver/code-server
     container_name: vscode
     hostname: vscode
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env      
+      - TZ=${TZ} # timezone, defined in .env
       - SUDO_PASSWORD=adminadmin
     volumes:
       - ./config/vscode:/config
-      - ./:/docker-mediaserver      
+      - ./:/docker-mediaserver
       - //var/run/docker.sock:/var/run/docker.sock
     ports:
       - 8443:8443
     restart: unless-stopped
-    labels:      
+    labels:
       traefik.http.routers.vscode.rule: Host(`vscode.$DOMAIN_NAME`, `vscode.localhost`)
       traefik.http.services.vscode.loadbalancer.server.port: 8443
       traefik.http.routers.vscode.middlewares: traefik-forward-auth
@@ -439,7 +435,7 @@ services:
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env      
+      - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ./config/files:/config
       - ${FILES}:/data/files
@@ -455,19 +451,19 @@ services:
       - --log.level=INFO
       #- --api.insecure=true
       - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443 #Declares the web-secure entrypoint in Traefik      
+      - --entrypoints.websecure.address=:443 #Declares the web-secure entrypoint in Traefik
       - --providers.docker=true
       - --api=true
       - --api.dashboard=true
       - --certificatesResolvers.le.acme.dnsChallenge=true
       - --certificatesResolvers.le.acme.dnsChallenge.provider=cloudflare
       - --certificatesresolvers.le.acme.email=${MY_EMAIL2}
-      - --certificatesresolvers.le.acme.storage=acme.json    
+      - --certificatesresolvers.le.acme.storage=acme.json
     restart: unless-stopped
     ports:
       - "80:80"
       - "8084:8080"
-      - "443:443" #Docker sends requests on port 443 to Traefik on port 443      
+      - "443:443" #Docker sends requests on port 443 to Traefik on port 443
     environment:
       - CF_API_EMAIL=${MY_EMAIL2}
       - CF_API_KEY=${CLOUDFLARE_API_TLS}
@@ -475,8 +471,8 @@ services:
       - //var/run/docker.sock:/var/run/docker.sock
     labels:
       traefik.http.routers.dash.rule: Host(`dash.$DOMAIN_NAME`, `dash.localhost`)
-      traefik.http.routers.dash.service: api@internal    
-      traefik.http.routers.dash.middlewares: traefik-forward-auth      
+      traefik.http.routers.dash.service: api@internal
+      traefik.http.routers.dash.middlewares: traefik-forward-auth
 
   cloudflare-ddns:
     image: oznu/cloudflare-ddns
@@ -485,9 +481,9 @@ services:
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env    
+      - TZ=${TZ} # timezone, defined in .env
       - API_KEY=${CLOUDFLARE_API}
-      - ZONE=${DOMAIN_NAME} 
+      - ZONE=${DOMAIN_NAME}
       - PROXIED=true
 
   cloudflare-companion:
@@ -505,7 +501,7 @@ services:
       - TARGET_DOMAIN=${DOMAIN_NAME}
       - DOMAIN1=${DOMAIN_NAME}
       - DOMAIN1_ZONE_ID=${CLOUDFLARE_ZONE_ID}
-      - DOMAIN1_PROXIED=TRUE      
+      - DOMAIN1_PROXIED=TRUE
 
   oauth:
     container_name: oauth
@@ -515,17 +511,17 @@ services:
       - PROVIDERS_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - PROVIDERS_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - SECRET=${OAUTH_SECRET}
-      - INSECURE_COOKIE=true # Example assumes no https, do not use in production      
+      - INSECURE_COOKIE=true # Example assumes no https, do not use in production
       - AUTH_HOST=oauth.${DOMAIN_NAME}
-      - URL_PATH=/_oauth      
-      - LIFETIME=86400 # 1 day      
+      - URL_PATH=/_oauth
+      - LIFETIME=86400 # 1 day
       - COOKIE_DOMAIN=${DOMAIN_NAME}
       - DEFAULT_ACTION=auth
       - DEFAULT_PROVIDER=google
       - LOG_LEVEL=trace
     security_opt:
-      - no-new-privileges:true    
-    command: 
+      - no-new-privileges:true
+    command:
       --rule.torrent.action=allow --rule.torrent.rule="(Host(`torrent.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`torrent.localhost`)"
       --rule.jellyseerr.action=allow --rule.jellyseerr.rule="(Host(`jellyseerr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`jellyseerr.localhost`)"
       --rule.plex.action=allow --rule.plex.rule="(Host(`plex.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`plex.localhost`)"
@@ -536,23 +532,22 @@ services:
       --rule.jackett.action=allow --rule.jackett.rule="(Host(`jackett.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`jackett.localhost`)"
       --rule.flaresolverr.action=allow --rule.flaresolverr.rule="(Host(`flaresolverr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`flaresolverr.localhost`)"
       --rule.prowlarr.action=allow --rule.prowlarr.rule="(Host(`prowlarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`prowlarr.localhost`)"
-      --rule.readarr.action=allow --rule.readarr.rule="(Host(`readarr.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`readarr.localhost`)"      
-      --rule.jellyfin.action=allow --rule.jellyfin.rule="Host(`jellyfin.$DOMAIN_NAME`) || Host(`jellyfin.localhost`)"      
+      --rule.jellyfin.action=allow --rule.jellyfin.rule="Host(`jellyfin.$DOMAIN_NAME`) || Host(`jellyfin.localhost`)"
       --rule.homarr.action=allow --rule.homarr.rule="Host(`localhost`)"
       --rule.calibre-web.action=allow --rule.calibre-web.rule="Host(`calibre-web.localhost`)"
       --rule.calibre.action=allow --rule.calibre.rule="Host(`calibre.localhost`)"
       --rule.portainer.action=allow --rule.portainer.rule="Host(`portainer.localhost`)"
       --rule.traefik.action=allow --rule.traefik.rule="Host(`dash.localhost`)"
-      --rule.vscode.action=allow --rule.vscode.rule="Host(`vscode.localhost`)"            
+      --rule.vscode.action=allow --rule.vscode.rule="Host(`vscode.localhost`)"
       --rule.files.action=allow --rule.files.rule="(Host(`files.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`files.localhost`)"
       --whitelist=${MY_EMAIL} --whitelist=${MY_EMAIL2} --whitelist=${MY_EMAIL3} --whitelist=${MY_EMAIL4}
     labels:
       traefik.http.middlewares.traefik-forward-auth.forwardauth.address: http://oauth:4181
-      traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders: X-Forwarded-User      
+      traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders: X-Forwarded-User
       traefik.http.middlewares.traefik-no-auth.chain.middlewares:
       traefik.http.services.oauth.loadbalancer.server.port: 4181
       traefik.http.routers.oauth.rule: Host(`oauth.$DOMAIN_NAME`)
-      traefik.http.routers.oauth.middlewares: traefik-forward-auth      
+      traefik.http.routers.oauth.middlewares: traefik-forward-auth
 
   watchtower:
     container_name: watchtower
@@ -573,5 +568,5 @@ services:
       - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${SMTP_SECRET}
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env    
+      - TZ=${TZ} # timezone, defined in .env
     restart: unless-stopped
