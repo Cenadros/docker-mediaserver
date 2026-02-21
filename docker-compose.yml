@@ -455,6 +455,8 @@ services:
       - --providers.docker=true
       - --api=true
       - --api.dashboard=true
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
       - --certificatesResolvers.le.acme.dnsChallenge=true
       - --certificatesResolvers.le.acme.dnsChallenge.provider=cloudflare
       - --certificatesresolvers.le.acme.email=${MY_EMAIL2}
@@ -469,6 +471,7 @@ services:
       - CF_API_KEY=${CLOUDFLARE_API_TLS}
     volumes:
       - //var/run/docker.sock:/var/run/docker.sock
+      - ./config/traefik/dynamic:/etc/traefik/dynamic
     labels:
       traefik.http.routers.dash.rule: Host(`dash.$DOMAIN_NAME`, `dash.localhost`)
       traefik.http.routers.dash.service: api@internal
@@ -539,6 +542,7 @@ services:
       --rule.portainer.action=allow --rule.portainer.rule="Host(`portainer.localhost`)"
       --rule.traefik.action=allow --rule.traefik.rule="Host(`dash.localhost`)"
       --rule.vscode.action=allow --rule.vscode.rule="Host(`vscode.localhost`)"
+      --rule.cockpit.action=allow --rule.cockpit.rule="Host(`cockpit.localhost`)"
       --rule.files.action=allow --rule.files.rule="(Host(`files.$DOMAIN_NAME`) && PathPrefix(`/api`)) || Host(`files.localhost`)"
       --whitelist=${MY_EMAIL} --whitelist=${MY_EMAIL2} --whitelist=${MY_EMAIL3} --whitelist=${MY_EMAIL4}
     labels:

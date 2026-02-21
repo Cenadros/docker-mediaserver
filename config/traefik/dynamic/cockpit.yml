@@ -1,0 +1,12 @@
+http:
+  routers:
+    cockpit:
+      rule: "Host(`cockpit.julastorrent.com`, `cockpit.localhost`)"
+      service: cockpit
+      middlewares:
+        - traefik-forward-auth@docker
+  services:
+    cockpit:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.5.55:9090"
