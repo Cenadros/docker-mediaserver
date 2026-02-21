@@ -376,7 +376,7 @@ services:
     restart: unless-stopped
     ports:
       - 9050:9000
-      - 8000:8000
+      - 8234:8000
     volumes:
       - //var/run/docker.sock:/var/run/docker.sock
       - ./config/portainer:/data

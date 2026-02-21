@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(xargs:*)",
+      "Bash(git -C /home/anton/Escritorio/docker-mediaserver log --oneline -15)",
+      "Bash(git -C /home/anton/Escritorio/docker-mediaserver remote -v)",
+      "Bash(git -C /home/anton/Escritorio/docker-mediaserver log --oneline --all)",
+      "Bash(git -C /home/anton/Escritorio/docker-mediaserver show --name-only 9e084e5)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api:*)",
+      "Bash(git clone:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker restart:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}
